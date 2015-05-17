@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+
+<head>
+
+<meta charset="utf-8">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<meta name="generator" content="pandoc" />
+
+
+
+<title>Reproducible Research: Peer Assessment 1</title>
+
+<script src="PA1_template_files/jquery-1.11.0/jquery.min.js"></script>
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<link href="PA1_template_files/bootstrap-2.3.2/css/bootstrap.min.css" rel="stylesheet" />
+<link href="PA1_template_files/bootstrap-2.3.2/css/bootstrap-responsive.min.css" rel="stylesheet" />
+<script src="PA1_template_files/bootstrap-2.3.2/js/bootstrap.min.js"></script>
+
+<style type="text/css">code{white-space: pre;}</style>
+<link rel="stylesheet"
+      href="PA1_template_files/highlight/default.css"
+      type="text/css" />
+<script src="PA1_template_files/highlight/highlight.js"></script>
+<style type="text/css">
+  pre:not([class]) {
+    background-color: white;
+  }
+</style>
+<script type="text/javascript">
+if (window.hljs && document.readyState && document.readyState === "complete") {
+   window.setTimeout(function() {
+      hljs.initHighlighting();
+   }, 0);
+}
+</script>
+
+
+
+</head>
+
+<body>
+
+<style type = "text/css">
+.main-container {
+  max-width: 940px;
+  margin-left: auto;
+  margin-right: auto;
+}
+</style>
+<div class="container-fluid main-container">
+
+
+<div id="header">
+<h1 class="title">Reproducible Research: Peer Assessment 1</h1>
+</div>
+
+
+<pre class="r"><code>## Loading and preprocessing the data
+unzip(&quot;activity.zip&quot;)
+activity &lt;- read.csv(&quot;activity.csv&quot;)
+
+## What is mean total number of steps taken per day?
+
+### 1. Calculate the total number of steps taken per day
+
+totalSteps &lt;- aggregate(steps ~ date, data = activity, sum, na.rm=TRUE)
+colnames(totalSteps)[2] &lt;- &quot;totalsteps&quot;
+
+### 2. Make a histogram of the total number of steps taken each day
+
+barplot(totalSteps$totalsteps, axis.lty = 1, names.arg = totalSteps$date, 
+        xlab = &quot;Date&quot;, ylab = &quot;Total number of steps&quot;, 
+        main = &quot;Total Number of Steps Taken Per Day&quot;)</code></pre>
+<p><img src="figure/unnamed-chunk-1-1.png" /></p>
+<pre class="r"><code>### 3. Calculate and report the mean and median of the total number of steps taken per day
+
+meanStepsperDay &lt;- mean(totalSteps$totalsteps)
+
+medStepsperDay&lt;- median(totalSteps$totalsteps)
+
+meanStepsperDay</code></pre>
+<pre><code>## [1] 10766.19</code></pre>
+<pre class="r"><code>medStepsperDay</code></pre>
+<pre><code>## [1] 10765</code></pre>
+<pre class="r"><code>## What is the average daily activity pattern?
+
+### 1. Make a time series plot (i.e. type = &quot;l&quot;) of the 5-minute interval (x-axis) and the average number of steps taken, averaged across all days (y-axis)
+
+meansteps &lt;- sapply(split(activity,activity$interval),function(x) mean(x$steps, na.rm = TRUE))
+
+xaxis &lt;- as.numeric(labels(meansteps)) 
+
+
+plot(xaxis,meansteps, type = &quot;l&quot;, xlab = &quot;Interval&quot;, ylab = &quot;Number of steps&quot;, main =&quot;Average number of Steps&quot;)</code></pre>
+<p><img src="figure/unnamed-chunk-1-2.png" /></p>
+<pre class="r"><code>### 2. Which 5-minute interval, on average across all the days in the dataset, contains the maximum number of steps?
+
+max_interval &lt;- labels(which.max(meansteps))
+
+max_interval</code></pre>
+<pre><code>## [1] &quot;835&quot;</code></pre>
+<pre class="r"><code>## Imputing missing values
+
+### 3. Calculate and report the total number of missing values in the dataset (i.e. the total number of rows with NAs)
+
+missing &lt;- sum(is.na(activity))
+
+missing</code></pre>
+<pre><code>## [1] 2304</code></pre>
+<pre class="r"><code>### 4. Devise a strategy for filling in all of the missing values in the dataset. The strategy does not need to be sophisticated. For example, you could use the mean/median for that day, or the mean for that 5-minute interval, etc.
+
+### Answer: The strategy is to replace the NA value by the mean value for that 5-minute interval
+
+s &lt;- split(activity,activity$date)
+
+stepsclean &lt;- c()
+
+for (i in 1:length(s)){
+
+  stepsday &lt;- s[[i]]$steps
+
+    for (j in 1:length(stepsday)){
+    
+      if (is.na(stepsday[j])){ 
+      
+        stepsday[j] &lt;- meansteps[j]
+    }
+
+  }
+
+  stepsclean &lt;- cbind(c(stepsclean,stepsday))
+  
+}
+
+### 5. Create a new dataset that is equal to the original dataset but with the missing data filled in.
+
+dataclean &lt;- activity
+
+dataclean$steps &lt;- stepsclean
+
+head(dataclean)</code></pre>
+<pre><code>##       steps       date interval
+## 1 1.7169811 2012-10-01        0
+## 2 0.3396226 2012-10-01        5
+## 3 0.1320755 2012-10-01       10
+## 4 0.1509434 2012-10-01       15
+## 5 0.0754717 2012-10-01       20
+## 6 2.0943396 2012-10-01       25</code></pre>
+<pre class="r"><code>### 6. Make a histogram of the total number of steps taken each day and  Do these values differ from the estimates from the first part of the assignment? 
+
+steps &lt;- dataclean$steps 
+
+sumstepsdc &lt;- sapply(split(dataclean,dataclean$date),function(x) sum(x$steps)) 
+
+barplot(sumstepsdc, xlab = &quot;Date&quot;, ylab = &quot;Total number of steps&quot;, main = &quot;Total Number of Steps Taken Per Day&quot;) </code></pre>
+<p><img src="figure/unnamed-chunk-1-3.png" /></p>
+<pre class="r"><code>### 7. Calculate and report the mean and median total number of steps taken per day. What is the impact of imputing missing data on the estimates of the total daily number of steps?
+
+meanStepsperDayDC &lt;- mean(sumstepsdc) 
+
+medStepsperDayDC &lt;- median(sumstepsdc) 
+
+meanStepsperDayDC </code></pre>
+<pre><code>## [1] 10766.19</code></pre>
+<pre class="r"><code>medStepsperDayDC </code></pre>
+<pre><code>## [1] 10766.19</code></pre>
+<pre class="r"><code>### Answer: Mean and median values do not differ after imputing missing data. 
+
+
+## Are there differences in activity patterns between weekdays and weekends?
+
+dates &lt;- dataclean$date 
+
+dates &lt;- as.Date(as.character(dates),&quot;%Y-%m-%d&quot;) 
+
+days &lt;- weekdays(dates) 
+
+days_factor &lt;- c() 
+
+
+weekend &lt;- c(&quot;Saturday&quot;,&quot;Sunday&quot;) 
+
+for (i in 1:length(days)){ 
+
+  if (days[i] %in% weekend) {
+  
+    days_factor[i] &lt;- &quot;weekend&quot;
+    
+    }
+    
+  else {days_factor[i] &lt;- &quot;weekday&quot;} 
+  
+} 
+
+dataclean$days_factor &lt;- days_factor
+
+
+### 1. Make a panel plot containing a time series plot (i.e. type = &quot;l&quot;) of the 5-minute interval (x-axis) and the average number of steps taken, averaged across all weekday days or weekend days (y-axis).
+
+dataweekday &lt;- dataclean[dataclean$days_factor==&quot;weekday&quot;,]
+
+meansteps_weekday &lt;- sapply(split(dataweekday,dataweekday$interval),function(x) mean(x$steps, na.rm = TRUE))
+
+xaxis_weekday &lt;- as.numeric(labels(meansteps_weekday))
+
+dataweekend &lt;- dataclean[dataclean$days_factor==&quot;weekend&quot;,]
+
+meansteps_weekend &lt;- sapply(split(dataweekend,dataweekend$interval),function(x) mean(x$steps, na.rm = TRUE))
+
+xaxis_weekend &lt;- as.numeric(labels(meansteps_weekend))
+
+par(mfrow=c(2,1))
+
+plot(xaxis_weekday,meansteps_weekday,main = &quot;Weekday&quot; ,type = &quot;l&quot;, xlab = &quot;Interval&quot;, ylab = &quot;Number of steps&quot;)
+
+plot(xaxis_weekend,meansteps_weekend,main = &quot;Weekend&quot; ,type = &quot;l&quot;, xlab = &quot;Interval&quot;, ylab = &quot;Number of steps&quot;)</code></pre>
+<p><img src="figure/unnamed-chunk-1-4.png" /></p>
+
+
+</div>
+
+<script>
+
+// add bootstrap table styles to pandoc tables
+$(document).ready(function () {
+  $('tr.header').parent('thead').parent('table').addClass('table table-condensed');
+});
+
+</script>
+
+<!-- dynamically load mathjax for compatibility with self-contained -->
+<script>
+  (function () {
+    var script = document.createElement("script");
+    script.type = "text/javascript";
+    script.src  = "https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML";
+    document.getElementsByTagName("head")[0].appendChild(script);
+  })();
+</script>
+
+</body>
+</html>
